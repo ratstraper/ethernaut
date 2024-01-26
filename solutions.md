@@ -304,7 +304,36 @@ Transfer 0.001 ETH From 0xAF98ab...7acAB048 To 0x8F35d7...64a80C45 << Вот, ч
 Остальсь понять на какой адрес отправлять эфир. Отправлю на свой адрес
 
 ### 18. MagicNumber (***)
+Мне нужен контракт который просто возвращает 42, чтобы у него ни спросили. FALLBACK конечно же
+```
+contract MagicNumber {
+    fallback() external payable { 
+        assembly {
+            let res:=mload(0x40)
+            mstore(res, 42)
+            return(res,0x20)
+        }
+    }
+}```
+Нет не так. Меньше кода - еще меньше
+```
+object "Contract" {
+    // This is the constructor code of the contract.
+    code {
+        // Deploy the contract
+        datacopy(0, dataoffset("runtime"), datasize("runtime"))
+        return(0, datasize("runtime"))
+    }
 
+    object "runtime" {
+        code {
+            let res:=mload(0x40)
+            mstore(res, 42)
+            return(res,0x20)
+        }
+    }
+  }
+  ```
 
 ### 19. Alien Codex (****)
 
